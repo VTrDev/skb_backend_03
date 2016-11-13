@@ -18,7 +18,12 @@ async function getJsonData() {
 }
 
 function getJsonByProperty(data, property) {
-  return (data[property] !== undefined) ? data[property] : undefined;  
+  //return (data[property] === undefined) ? undefined : data[property];
+  try {
+    return (property in data) ? data[property] : undefined;
+  } catch (err) {
+    return undefined;
+  }
 }
 
 app.get('/task3A', async (req, res) => {
@@ -27,7 +32,7 @@ app.get('/task3A', async (req, res) => {
   if (data) {
     res.json(data);
   } else {
-    res.status(200).send('Not found');
+    res.status(404).send('Not Found');
   }  
 });
 
@@ -65,25 +70,30 @@ app.get('/task3A/:component', async (req, res) => {
   if (componentJson !== undefined) {
     res.json(componentJson);
   } else {
-    res.status(404).send('Not found');
+    res.status(404).send('Not Found');
   }  
 });
 
 
 app.get('/task3A/:component/:property', async (req, res) => {
-  let data = await getJsonData();  
+  let data = await getJsonData();
 
   let componentJson = getJsonByProperty(data, req.params.component);
   if (componentJson === undefined) {
-    res.status(404).send('Not found');
+    res.status(404).send('Not Found');
     return;
   }  
+
+  if (componentJson instanceof Array && isNaN(req.params.property)) {
+    res.status(404).send('Not Found');
+    return;
+  }
 
   let propertyJson = getJsonByProperty(componentJson, req.params.property);
   if (propertyJson !== undefined) {
     res.json(propertyJson);
   } else {
-    res.status(404).send('Not found');
+    res.status(404).send('Not Found');
   }  
 });
 
@@ -93,36 +103,39 @@ app.get('/task3A/:component/:prop_or_idx/:subprop', async (req, res) => {
 
   let componentJson = getJsonByProperty(data, req.params.component);    
   if (componentJson === undefined) {
-    res.status(404).send('Not found');
+    res.status(404).send('Not Found');
     return;
   }
   
   if (Number.isInteger(req.params.prop_or_idx)) {
     let subpropJson = componentJson[req.params.prop_or_idx];
     if (subpropJson == undefined) {
-      res.status(404).send('Not found');
+      res.status(404).send('Not Found');
       return;
     }
-    if (subpropJson[req.params.subprop] !== undefined) {
+    if (subpropJson[req.params.subprop] !== undefined) {      
       res.json(subpropJson[req.params.subprop]);
       return;
     } else {
-      res.status(404).send('Not found');
+      res.status(404).send('Not Found');
       return;
     }
   }
   
   let propertyJson = getJsonByProperty(componentJson, req.params.prop_or_idx);  
   if (propertyJson === undefined) {
-    res.status(404).send('Not found');
+    res.status(404).send('Not Found');
     return;    
   } 
 
+  //console.log(propertyJson.hasOwnProperty(req.params.subprop));
   let subpropertyJson = getJsonByProperty(propertyJson, req.params.subprop); 
-  if (subpropertyJson !== undefined) {
+  if (subpropertyJson !== undefined) {    
     res.json(subpropertyJson);
+    return;
   } else {
-    res.status(404).send('Not found');
+    res.status(404).send('Not Found');
+    return;
   }  
 
 });
