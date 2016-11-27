@@ -183,13 +183,10 @@ async function getPetsData() {
 
   });
 
-  // json.pets.forEach(async (pet) => {
-  //   let p = new Pet();
-  //   await p.save();     
-  // });
 }
 
-getPetsData();
+// !!! РАСКОМЕНТИРОВАТЬ, ЧТОБЫ ЗАГРУЗИТЬ ДАННЫЕ В БД !!!
+//getPetsData();
 
 // GET / - Получение списка всей исходной базы
 app.get('/task3B/', async (req, res) => {
@@ -396,10 +393,74 @@ app.get('/task3B/pets/:id/populate', async (req, res) => {
 });
 
 
+/** ======================================================================
+ * Задача 3C: Жирный покемон
+ ======================================================================== */
 
+const { Schema } = mongoose;
 
+const PokemonSchema = new Schema({    
+  name: String,
+  height: Number,
+  weight: Number,
+  weight_div_height: Number    
+});
 
+PokemonSchema.methods.toJSON = function() {
+  return this.name;
+}
 
+const Pokemon = mongoose.model('Pokemon', PokemonSchema);
+
+app.get('/task3C/saveAll', async (req, res) => {
+
+  const pokemons = require("./pokemons.json");
+
+  pokemons.forEach(async (pokemon) => {
+    await (new Pokemon(_.assign(pokemon, {'weight_div_height': pokemon.weight / pokemon.height}))).save();
+  });
+
+  return res.json({ res: 'Data saved' });  
+});
+
+app.get('/task3C/:metric?', async (req, res) => {
+  let result = Pokemon.find();
+
+  if (req.params && req.params.metric) {    
+    const metric = req.params.metric;
+    if (metric == "angular") {
+      result = result.sort('weight_div_height name');  
+    }
+    if (metric == "fat") {
+      result = result.sort('-weight_div_height name');  
+    }
+    if (metric == "huge") {
+      result = result.sort('-height name');  
+    }
+    if (metric == "micro") {
+      result = result.sort('height name');  
+    }
+    if (metric == "heavy") {
+      result = result.sort('-weight name');  
+    }
+    if (metric == "light") {
+      result = result.sort('weight name');  
+    }
+  } else {
+    result = result.sort('name');
+  }  
+
+  if (req.query.offset && !isNaN(req.query.offset)) {
+    result = result.skip(parseInt(req.query.offset));
+  } 
+  if (req.query.limit && !isNaN(req.query.limit)) {
+    result = result.limit(parseInt(req.query.limit));
+  } else {
+    result = result.limit(20);
+  }
+  
+  res.json(await result);
+})
 
 
 
